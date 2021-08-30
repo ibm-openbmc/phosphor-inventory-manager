@@ -126,6 +126,11 @@ executable(
     install_dir: get_option('bindir'),
 )
 
+install_data('scripts/clear-all-fault-leds.sh',
+    install_mode: 'rwxr-xr-x',
+    install_dir: get_option('bindir')
+)
+
 build_tests = get_option('tests')
 if not build_tests.disabled()
     subdir('test')
