@@ -1,8 +1,8 @@
-BUILT_SOURCES=generated.cpp extra_ifaces.cpp gen_serialization.hpp
+BUILT_SOURCES=generated.cpp extra_ifaces.cpp gen_serialization.hpp 
 
 CLEANFILES=$(BUILT_SOURCES)
 
-bin_PROGRAMS = phosphor-inventory
+bin_PROGRAMS = phosphor-inventory remove-association
 bin_SCRIPTS = scripts/clear-all-fault-leds.sh
 noinst_LTLIBRARIES = libmanagercommon.la libmanager.la
 
@@ -12,6 +12,10 @@ base_yamldir=$(YAML_PATH)
 phosphor_inventory_SOURCES = app.cpp
 phosphor_inventory_LDADD = libmanager.la $(SDBUSPLUS_LIBS)
 phosphor_inventory_CXXFLAGS = $(SDBUSPLUS_CFLAGS) -flto
+
+remove_association_SOURCES = remove_association.cpp remove_association_main.cpp 
+remove_association_LDADD =  $(SDBUSPLUS_LIBS)
+remove_association_CXXFLAGS = $(SDBUSPLUS_CFLAGS)
 
 libmanagercommon_la_LDFLAGS = -static
 libmanagercommon_la_SOURCES = \
