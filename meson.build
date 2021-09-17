@@ -126,6 +126,16 @@ executable(
     install_dir: get_option('bindir'),
 )
 
+executable(
+    'remove-association',
+    'remove_association.cpp',
+    'remove_association_main.cpp',
+    implicit_include_directories: true,
+    dependencies: sdbusplus_dep,
+    install: true,
+    install_dir: get_option('bindir'),
+)
+
 install_data('scripts/clear-all-fault-leds.sh',
     install_mode: 'rwxr-xr-x',
     install_dir: get_option('bindir')
