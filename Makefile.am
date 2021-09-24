@@ -2,7 +2,10 @@ BUILT_SOURCES=generated.cpp extra_ifaces.cpp gen_serialization.hpp
 
 CLEANFILES=$(BUILT_SOURCES)
 
+
 bin_PROGRAMS = phosphor-inventory remove-association
+bin_SCRIPTS = scripts/clear-all-fault-leds.sh
+
 noinst_LTLIBRARIES = libmanagercommon.la libmanager.la
 
 extra_yamldir=$(YAML_PATH)/extra_interfaces.d
