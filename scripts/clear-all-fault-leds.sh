@@ -51,14 +51,19 @@ do
 done
 
 # Now, set the OperationalStatus Functional to what has been requested
+# We filter out the valid object path using a mapper call
 if [ ${#excluded_groups} -eq 0 ]
 then
-    for line in $(busctl tree xyz.openbmc_project.Inventory.Manager  | grep -e motherboard/ | awk -F 'xyz' '{print "/xyz" $2}');
+    busctl call xyz.openbmc_project.ObjectMapper /xyz/openbmc_project/object_mapper xyz.openbmc_project.ObjectMapper \
+    GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
+    | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
     do
         busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
     done
 else
-    for line in $(busctl tree xyz.openbmc_project.Inventory.Manager | grep -e motherboard/ | grep -Ev "$excluded_groups" | awk -F 'xyz' '{print "/xyz" $2}');
+    busctl call xyz.openbmc_project.ObjectMapper /xyz/openbmc_project/object_mapper xyz.openbmc_project.ObjectMapper \
+    GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
+    | grep -Ev "$excluded_groups" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
     do
         busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
     done
