@@ -52,12 +52,19 @@ done
 
 # Now, set the OperationalStatus Functional to what has been requested
 # We filter out the valid object path using a mapper call
+# If we find a unitX/coreX under then, we don't consider those because 
+# they are not mapped to LED's. Applicable for CPUs and DIMMs
 if [ ${#excluded_groups} -eq 0 ]
 then
     busctl call xyz.openbmc_project.ObjectMapper /xyz/openbmc_project/object_mapper xyz.openbmc_project.ObjectMapper \
     GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
     | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
     do
+        echo "$line" | grep "unit\|core" >/dev/null
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            continue
+        fi     
         busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
     done
 else
@@ -65,6 +72,11 @@ else
     GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
     | grep -Ev "$excluded_groups" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
     do
+        echo "$line" | grep "unit\|core" >/dev/null
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            continue
+        fi
         busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
     done
 fi
