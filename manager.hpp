@@ -94,6 +94,17 @@ class Manager final : public ServerObject<ManagerIface>
         const std::map<sdbusplus::message::object_path, Object>& objs,
         bool restoreFromCache = false);
 
+    /** @brief Delete objects on DBus.
+     *
+     *  @param[in] objs - Map of object path and empty interface.
+     *      Empty interface will cause that corresponding object path
+     *      to be deleted from dbus tree as well as persistency path.
+     */
+    void deleteObjects(std::map<sdbusplus::message::object_path, Object>& objs);
+
+    /** @brief delete object's interfaces from persistency path*/
+    void clearPersistency(const std::vector<std::string>& paths);
+
     /** @brief Restore persistent inventory items */
     void restore();
 
