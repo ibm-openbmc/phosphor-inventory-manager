@@ -29,6 +29,14 @@ if [ "$action" != "true" ] && [ "$action" != "false" ]; then
     exit 1;
 fi
 
+# Skip running this script if the chassis is powered ON.
+current_chassis_status=$(busctl get-property xyz.openbmc_project.State.Chassis /xyz/openbmc_project/state/chassis0 xyz.openbmc_project.State.Chassis CurrentPowerState | cut -d" " -f2)
+
+if [ "${current_chassis_status}" = "\"xyz.openbmc_project.State.Chassis.PowerState.On\"" ]; then
+    echo "Current chassis power state is , $current_chassis_status . Exit clear-all-fault-leds.sh script successfully without doing any fault LED reset."
+    exit 0
+fi
+
 # Get the excluded groups, where $@ is all the agruments passed
 index=2;
 excluded_groups=""
