@@ -26,7 +26,6 @@
 #include <iostream>
 
 using namespace std::literals::chrono_literals;
-using std::filesystem::directory_iterator;
 
 namespace phosphor
 {
@@ -248,11 +247,8 @@ void Manager::updateObjects(
             newObj = true;
         }
 
-        if (!objit->second.empty())
-        {
-            updateInterfaces(absPath, objit->second, refit, newObj,
-                             restoreFromCache);
-        }
+        updateInterfaces(absPath, objit->second, refit, newObj,
+                         restoreFromCache);
 #ifdef CREATE_ASSOCIATIONS
         if (!_associations.pendingCondition() && newObj)
         {
@@ -276,105 +272,8 @@ void Manager::updateObjects(
     }
 }
 
-void Manager::clearPersistency(const std::vector<std::string>& paths)
-{
-    for (const auto& objPath : paths)
-    {
-        std::string absObjPath(std::string(PIM_PERSIST_PATH) +
-                               "/xyz/openbmc_project/inventory");
-        absObjPath.append(objPath);
-
-        for (const auto& file : directory_iterator(absObjPath))
-        {
-            // Remove files and empty subdirectories.
-            if (!remove(file.path()))
-                std::cerr << "Error deleting this file/subdir [" << file.path()
-                          << "]\n";
-        }
-
-        // All files are deleted.
-        // Now delete directory if nothing exists in this path.
-        if (remove(absObjPath.c_str()))
-        {
-            std::cerr << "Error deleting this object path- "
-                      << absObjPath.c_str() << "\n";
-        }
-    }
-}
-
-void Manager::deleteObjects(
-    std::map<sdbusplus::message::object_path, Object>& objs)
-{
-    auto objItr = objs.begin();
-    auto refItr = _refs.begin();
-    std::string absPath(_root);
-    std::vector<std::string> paths;
-
-    auto lastKey = objs.rbegin()->first;
-    auto thisIsLastObj = false;
-
-    while (objItr != objs.end())
-    {
-        // Find the insertion point or the object to DELETE.
-        refItr = lower_bound(refItr, _refs.end(), objItr->first,
-                             compareFirst(RelPathCompare(_root)));
-
-        absPath.append(objItr->first);
-
-        if (refItr == _refs.end() || refItr->first != absPath)
-        {
-            // requested object to delete not found/already deleted.
-            ++objItr;
-            continue;
-        }
-        else
-        {
-            // check if it has interfaces, if no then collect the object to
-            // delete and also remove it from object map
-            if (objItr->second.empty())
-            {
-                if (objItr->first == lastKey)
-                {
-                    thisIsLastObj = true;
-                }
-
-                paths.push_back(objItr->first);
-                objItr = objs.erase(objItr);
-
-                // In case last object from map is erased, then we can't access
-                // that map's iterator anymore. So break the loop.
-                if (thisIsLastObj)
-                {
-                    break;
-                }
-            }
-            else
-            {
-                ++objItr;
-                continue;
-            }
-        }
-    }
-
-    // If got something to delete.
-    if (paths.size())
-    {
-        // convert it to char* to call destroyObjects
-        std::vector<const char*> pathVec;
-        for (auto& p : paths)
-        {
-            pathVec.push_back(p.c_str());
-        }
-        destroyObjects(pathVec);
-
-        // Remove it from persistency also.
-        clearPersistency(paths);
-    }
-}
-
 void Manager::notify(std::map<sdbusplus::message::object_path, Object> objs)
 {
-    deleteObjects(objs);
     updateObjects(objs);
 }
 
