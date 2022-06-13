@@ -75,7 +75,6 @@ struct MakeVariantVisitor
     struct Make<
         T, Arg,
         typename std::enable_if_t<
-            !std::is_convertible_v<Arg, T> &&
             std::is_same_v<std::string,
                            std::remove_cv_t<std::remove_reference_t<Arg>>> &&
             sdbusplus::message::has_convert_from_string_v<T>>>
