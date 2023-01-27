@@ -83,7 +83,7 @@ generated_cpp = custom_target(
         '-i', ifacesdir,
         '-d', get_option('YAML_PATH'),
         '-o', meson.current_build_dir(),
-        '-b', '$BUSNAME',
+        '-b', conf_data.get_unquoted('BUSNAME'),
         'generate-cpp'
     ],
     output : 'generated.cpp')
@@ -96,7 +96,7 @@ gen_serialization_hpp = custom_target(
         '-i', ifacesdir,
         '-d', get_option('YAML_PATH'),
         '-o', meson.current_build_dir(),
-        '-b', '$BUSNAME',
+        '-b', conf_data.get_unquoted('BUSNAME'),
         'generate-serialization'
     ],
     output : 'gen_serialization.hpp')
@@ -124,6 +124,21 @@ executable(
     dependencies: deps,
     install: true,
     install_dir: get_option('bindir'),
+)
+
+executable(
+    'remove-association',
+    'remove_association.cpp',
+    'remove_association_main.cpp',
+    implicit_include_directories: true,
+    dependencies: sdbusplus_dep,
+    install: true,
+    install_dir: get_option('bindir'),
+)
+
+install_data('scripts/clear-all-fault-leds.sh',
+    install_mode: 'rwxr-xr-x',
+    install_dir: get_option('bindir')
 )
 
 build_tests = get_option('tests')
