@@ -68,7 +68,7 @@ then
     GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
     | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
     do
-        echo "$line" | grep "unit\|core" >/dev/null
+        echo "$line" | grep "powersupply\|dimm\|dcm\|fan" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
             continue
@@ -78,9 +78,9 @@ then
 else
     busctl call xyz.openbmc_project.ObjectMapper /xyz/openbmc_project/object_mapper xyz.openbmc_project.ObjectMapper \
     GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
-    | grep -Ev "$excluded_groups" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
+    | sed  's/ /\n/g' | tail -n+3 | grep -Ev "$excluded_groups" | awk -F "\"" '{print $2}' | while read -r line
     do
-        echo "$line" | grep "unit\|core" >/dev/null
+        echo "$line" | grep "powersupply\|dimm\|dcm\|fan" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
             continue
