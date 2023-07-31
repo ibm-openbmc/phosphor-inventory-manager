@@ -58,6 +58,24 @@ do
     index=$((index+1))
 done
 
+#Extract list of DIMMs that has been guarded. This is required to by-pass
+#clearing of operation status property for those DIMMs at startup.
+declare -a guardedDimms=()
+while IFS= read -r line
+    do
+	while IFS= read -r line2
+	    do
+		echo "$line2" | grep "dimm" >/dev/null
+		rc=$?
+		if [ $rc -eq 0 ]; then
+		    guardedDimms+=("$line2");
+		fi
+	    done < <( busctl get-property org.open_power.HardwareIsolation "$line" xyz.openbmc_project.Association.Definitions Associations \
+		    | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' )
+    done < <( busctl call xyz.openbmc_project.ObjectMapper /xyz/openbmc_project/object_mapper xyz.openbmc_project.ObjectMapper \
+	    GetSubTreePaths sias "/xyz/openbmc_project/hardware_isolation/events/hw_isolation_status" 0 1 "xyz.openbmc_project.Association.Definitions" \
+	    | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' )
+
 # Now, set the OperationalStatus Functional to what has been requested
 # We filter out the valid object path using a mapper call
 # If we find a unitX/coreX under then, we don't consider those because
@@ -68,11 +86,18 @@ then
         GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
         | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
     do
-        echo "$line" | grep "powersupply\|dimm\|dcm\|fan" >/dev/null
+        echo "$line" | grep "powersupply\|dcm\|fan" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
             continue
         fi
+	echo "$line" | grep "dimm" >/dev/null
+	rc=$?
+	if [ $rc -eq 0 ]; then
+	    if [[ ${guardedDimms[@]} =~ $line ]]; then
+		continue
+	    fi
+	fi
         busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
     done
 else
@@ -80,10 +105,17 @@ else
         GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
         | sed  's/ /\n/g' | tail -n+3 | grep -Ev "$excluded_groups" | awk -F "\"" '{print $2}' | while read -r line
     do
-        echo "$line" | grep "powersupply\|dimm\|dcm\|fan" >/dev/null
+        echo "$line" | grep "powersupply\|dcm\|fan" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
             continue
+        fi
+	echo "$line" | grep "dimm" >/dev/null
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            if [[ ${guardedDimms[@]} =~ $line ]]; then
+                continue
+            fi
         fi
         busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
     done
