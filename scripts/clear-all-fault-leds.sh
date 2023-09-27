@@ -68,11 +68,13 @@ then
     GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
     | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
     do
-        echo "$line" | grep "powersupply\|dimm\|dcm\|fan" >/dev/null
+        #object paths for core implemets interface for operational status but is hosted by PLDM service
+        # not by inventory manager. Hence we need to skip call to those paths.
+        echo "$line" | grep "core" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
-            continue
-        fi     
+            continue;
+        fi
         busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
     done
 else
@@ -80,10 +82,12 @@ else
     GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
     | sed  's/ /\n/g' | tail -n+3 | grep -Ev "$excluded_groups" | awk -F "\"" '{print $2}' | while read -r line
     do
-        echo "$line" | grep "powersupply\|dimm\|dcm\|fan" >/dev/null
+        #object paths for core implemets interface for operational status but is hosted by PLDM service
+        # not by inventory manager. Hence we need to skip call to those paths.
+        echo "$line" | grep "core" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
-            continue
+            continue;
         fi
         busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
     done
