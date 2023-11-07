@@ -76,6 +76,15 @@ then
             continue;
         fi
         busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
+
+	#Set the Asserted State
+	busctl call xyz.openbmc_project.ObjectMapper "$line/fault_identifying" \
+	org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
+	"endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
+	do
+	    busctl set-property xyz.openbmc_project.LED.GroupManager \
+	    "$line2" xyz.openbmc_project.Led.Group Asserted b false;
+   	done
     done
 else
     busctl call xyz.openbmc_project.ObjectMapper /xyz/openbmc_project/object_mapper xyz.openbmc_project.ObjectMapper \
@@ -90,6 +99,15 @@ else
             continue;
         fi
         busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
+
+	#Set the Asserted State
+	busctl call xyz.openbmc_project.ObjectMapper "$line/fault_identifying" \
+	org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
+	"endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
+	do
+	    busctl set-property xyz.openbmc_project.LED.GroupManager \
+	    "$line2" xyz.openbmc_project.Led.Group Asserted b false;
+   	done
     done
 fi
 
