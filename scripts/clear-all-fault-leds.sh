@@ -68,22 +68,41 @@ then
         GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
         | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
     do
+	#skip All empty lines
+	if [ -z "$line" ];then
+	    continue;
+	fi
+
         #object paths for core implemets interface for operational status but is hosted by PLDM service
         # not by inventory manager. Hence we need to skip call to those paths.
-        echo "$line" | grep "core\|powersupply" >/dev/null
+        echo "$line" | grep "core\|powersupply\|unit\|connector\|chasis1" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
             continue;
         fi
-        busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
+        busctl set-property xyz.openbmc_project.Inventory.Manager \
+	"$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
 
-	#Set the Asserted State
+	#skip paths which have no fault LED
+        echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            continue;
+        fi
+
+	# Get the Fault LED associations
 	busctl call xyz.openbmc_project.ObjectMapper "$line/fault_identifying" \
 	org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
 	"endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
 	do
+	    # Skip All empty lines
+	    if [ -z "$line2" ];then
+	        continue;
+	    fi
+
+	    # Set the Asserted State property
 	    busctl set-property xyz.openbmc_project.LED.GroupManager \
-	    "$line2" xyz.openbmc_project.Led.Group Asserted b false;
+		    "$line2" xyz.openbmc_project.Led.Group Asserted b false;
    	done
     done
 else
@@ -91,20 +110,39 @@ else
         GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
         | sed  's/ /\n/g' | tail -n+3 | grep -Ev "$excluded_groups" | awk -F "\"" '{print $2}' | while read -r line
     do
+	# Skip All empty lines
+	if [ -z "$line" ];then
+	    continue;
+	fi
+
         #object paths for core implemets interface for operational status but is hosted by PLDM service
         # not by inventory manager. Hence we need to skip call to those paths.
-        echo "$line" | grep "core\|powersupply" >/dev/null
+        echo "$line" | grep "core\|powersupply\|unit\|connector\|chassis1" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
             continue;
         fi
-        busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
+        busctl set-property xyz.openbmc_project.Inventory.Manager \
+		"$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
 
-	#Set the Asserted State
+	#s Skip paths which have no fault LED
+        echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            continue;
+        fi
+
+	# Get the Fault LED associations
 	busctl call xyz.openbmc_project.ObjectMapper "$line/fault_identifying" \
 	org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
 	"endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
 	do
+	    # Skip All empty lines
+	    if [ -z "$line2" ];then
+	        continue;
+	    fi
+
+	    # Set the Asserted State property
 	    busctl set-property xyz.openbmc_project.LED.GroupManager \
 	    "$line2" xyz.openbmc_project.Led.Group Asserted b false;
    	done
