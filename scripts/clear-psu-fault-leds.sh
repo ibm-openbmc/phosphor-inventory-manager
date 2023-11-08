@@ -23,7 +23,7 @@ do
     busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b true;
 
     #Set the Asserted State
-    busctl call xyz.openbmc_project.ObjectMapper "$line/fault_identifying" \
+    busctl call xyz.openbmc_project.ObjectMapper "$line/fault_led_group" \
     org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
     "endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
     do
