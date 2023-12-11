@@ -75,6 +75,30 @@ void getProperty(sdbusplus::bus::bus& bus, const std::string& service,
     reply.read(value);
 }
 
+/** @brief get Dbus service
+ *
+ */
+const std::string getService(const std::string& path,
+                             const std::string& interface)
+{
+    constexpr auto mapper_busname = "xyz.openbmc_project.objectmapper";
+    constexpr auto mapper_obj_path = "/xyz/openbmc_project/object_mapper";
+    constexpr auto mapper_iface = "xyz.openbmc_project.objectmapper";
+    using interfacelist = std::vector<std::string>;
+    std::map<std::string, std::vector<std::string>> mapperresponse;
+
+    static auto bus = sdbusplus::bus::new_default();
+    auto mapper = bus.new_method_call(mapper_busname, mapper_obj_path,
+                                      mapper_iface, "getobject");
+    mapper.append(path, interfacelist({interface}));
+
+    auto mapperresponsemsg = bus.call(mapper);
+    mapperresponsemsg.read(mapperresponse);
+
+    // the value here will be the service name
+    return mapperresponse.cbegin()->first;
+}
+
 void removeCriticalAssociation(sdbusplus::bus::bus& bus,
                                const std::string& objectPath,
                                const std::string& service)
