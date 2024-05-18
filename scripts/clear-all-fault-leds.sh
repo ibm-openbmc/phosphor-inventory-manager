@@ -68,10 +68,10 @@ then
         GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
         | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
     do
-	#skip All empty lines
-	if [ -z "$line" ];then
-	    continue;
-	fi
+	    #skip All empty lines
+	    if [ -z "$line" ];then
+	        continue;
+	    fi
 
         #object paths for core implemets interface for operational status but is hosted by PLDM service
         # not by inventory manager. Hence we need to skip call to those paths.
@@ -81,7 +81,7 @@ then
             continue;
         fi
         busctl set-property xyz.openbmc_project.Inventory.Manager \
-	"$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
+	"$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action" || echo "Exception for Dbus path: $line";
 
 	#skip paths which have no fault LED
         echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
