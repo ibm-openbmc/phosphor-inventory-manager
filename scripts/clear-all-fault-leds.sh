@@ -3,7 +3,7 @@
 # This shell script sets the group D-Bus objects in
 # /xyz/openbmc_project/State/Decorator/OperationalStatusManager
 # to true or false.
-
+set -e
 usage()
 {
     echo "clear-all-fault-leds.sh [true/false]"
@@ -68,10 +68,10 @@ then
         GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
         | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
     do
-	#skip All empty lines
-	if [ -z "$line" ];then
-	    continue;
-	fi
+        #skip All empty lines
+	 if [ -z "$line" ];then
+	     continue;
+	 fi
 
         #object paths for core implemets interface for operational status but is hosted by PLDM service
         # not by inventory manager. Hence we need to skip call to those paths.
@@ -81,39 +81,39 @@ then
             continue;
         fi
         busctl set-property xyz.openbmc_project.Inventory.Manager \
-	"$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
+	     "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action" || echo "Exception for Dbus path: $line";
 
-	#skip paths which have no fault LED
+	  #skip paths which have no fault LED
         echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
             continue;
         fi
 
-	# Get the Fault LED associations
-	busctl call xyz.openbmc_project.ObjectMapper "$line/fault_identifying" \
-	org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
-	"endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
-	do
-	    # Skip All empty lines
-	    if [ -z "$line2" ];then
+	  # Get the Fault LED associations
+	  busctl call xyz.openbmc_project.ObjectMapper "$line/fault_identifying" \
+	  org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
+	  "endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
+	  do
+	      # Skip All empty lines
+	      if [ -z "$line2" ];then
 	        continue;
-	    fi
+	      fi
 
-	    # Set the Asserted State property
-	    busctl set-property xyz.openbmc_project.LED.GroupManager \
-		    "$line2" xyz.openbmc_project.Led.Group Asserted b false;
-   	done
+	      # Set the Asserted State property
+	      busctl set-property xyz.openbmc_project.LED.GroupManager \
+		  "$line2" xyz.openbmc_project.Led.Group Asserted b false || echo "Exception thrown for Dbus path: $line2";
+   	  done
     done
 else
     busctl call xyz.openbmc_project.ObjectMapper /xyz/openbmc_project/object_mapper xyz.openbmc_project.ObjectMapper \
         GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" \
         | sed  's/ /\n/g' | tail -n+3 | grep -Ev "$excluded_groups" | awk -F "\"" '{print $2}' | while read -r line
     do
-	# Skip All empty lines
-	if [ -z "$line" ];then
-	    continue;
-	fi
+      # Skip All empty lines
+      if [ -z "$line" ];then
+        continue;
+      fi
 
         #object paths for core implemets interface for operational status but is hosted by PLDM service
         # not by inventory manager. Hence we need to skip call to those paths.
@@ -123,29 +123,29 @@ else
             continue;
         fi
         busctl set-property xyz.openbmc_project.Inventory.Manager \
-		"$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action";
+	"$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action" || echo "Exception for Dbus path(else): $line";
 
-	#s Skip paths which have no fault LED
+	 # Skip paths which have no fault LED
         echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
             continue;
         fi
 
-	# Get the Fault LED associations
-	busctl call xyz.openbmc_project.ObjectMapper "$line/fault_identifying" \
-	org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
-	"endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
-	do
-	    # Skip All empty lines
-	    if [ -z "$line2" ];then
-	        continue;
-	    fi
+      # Get the Fault LED associations
+      busctl call xyz.openbmc_project.ObjectMapper "$line/fault_identifying" \
+      org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
+      "endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
+      do
+        # Skip All empty lines
+        if [ -z "$line2" ];then
+            continue;
+        fi
 
-	    # Set the Asserted State property
-	    busctl set-property xyz.openbmc_project.LED.GroupManager \
-	    "$line2" xyz.openbmc_project.Led.Group Asserted b false;
-   	done
+        # Set the Asserted State property
+        busctl set-property xyz.openbmc_project.LED.GroupManager \
+        "$line2" xyz.openbmc_project.Led.Group Asserted b false || "Exception thrown for Dbus path(else): $line2";
+      done
     done
 fi
 
