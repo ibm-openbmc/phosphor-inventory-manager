@@ -3,7 +3,7 @@
 # This shell script sets the group D-Bus objects in
 # /xyz/openbmc_project/State/Decorator/OperationalStatusManager
 # to true or false.
-set -e
+
 usage()
 {
     echo "clear-all-fault-leds.sh [true/false]"
