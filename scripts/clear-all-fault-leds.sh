@@ -3,7 +3,6 @@
 # This shell script sets the group D-Bus objects in
 # /xyz/openbmc_project/State/Decorator/OperationalStatusManager
 # to true or false.
-set -e
 usage()
 {
     echo "clear-all-fault-leds.sh [true/false]"
@@ -81,7 +80,7 @@ then
             continue;
         fi
         busctl set-property xyz.openbmc_project.Inventory.Manager \
-            "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action" || echo "Exception for DBus path: $line";
+            "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action"
 
         #skip paths which have no fault LED
         echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
@@ -102,7 +101,7 @@ then
 
             # Set the Asserted State property
             busctl set-property xyz.openbmc_project.LED.GroupManager \
-                "$line2" xyz.openbmc_project.Led.Group Asserted b false || echo "Exception in setting asserted for path: $line2";
+                "$line2" xyz.openbmc_project.Led.Group Asserted b false
         done
     done
 else
@@ -123,7 +122,7 @@ else
             continue;
         fi
         busctl set-property xyz.openbmc_project.Inventory.Manager \
-            "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action" || echo "Exception DBus path(else): $line";
+            "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action"
 
         # Skip paths which have no fault LED
         echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
@@ -144,7 +143,7 @@ else
 
             # Set the Asserted State property
             busctl set-property xyz.openbmc_project.LED.GroupManager \
-                "$line2" xyz.openbmc_project.Led.Group Asserted b false || echo "Exception in setting asserted for path(else): $line2";
+                "$line2" xyz.openbmc_project.Led.Group Asserted b false
         done
     done
 fi
