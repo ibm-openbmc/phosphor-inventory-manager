@@ -20,15 +20,22 @@ busctl set-property xyz.openbmc_project.LED.GroupManager "/xyz/openbmc_project/l
 busctl call xyz.openbmc_project.ObjectMapper /xyz/openbmc_project/object_mapper xyz.openbmc_project.ObjectMapper GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.Inventory.Item.PowerSupply" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
 do
     # Clear fault LEDs for all power supply objects by setting its Functional to true.
-    busctl set-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b true;
+    echo "$line" | grep "/xyz/openbmc_project/inventory" >/dev/null
+    rc=$?
+    if [ $rc -eq 0 ]; then
+        inventory_path=$(echo "$line" | sed 's|/xyz/openbmc_project/inventory||')
+        busctl call xyz.openbmc_project.Inventory.Manager /xyz/openbmc_project/inventory xyz.openbmc_project.Inventory.Manager Notify "a{oa{sa{sv}}}" 1 "$inventory_path" 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" 1 "Functional" b true;
+    fi
 
     #Set the Asserted State
     busctl call xyz.openbmc_project.ObjectMapper "$line/fault_identifying" \
-    org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
-    "endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
+        org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
+        "endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
     do
-        busctl set-property xyz.openbmc_project.LED.GroupManager \
-        "$line2" xyz.openbmc_project.Led.Group Asserted b false;
+        if [ -n "$line2" ]; then
+            busctl set-property xyz.openbmc_project.LED.GroupManager \
+                "$line2" xyz.openbmc_project.Led.Group Asserted b false;
+        fi
     done
 done
 exit 0
