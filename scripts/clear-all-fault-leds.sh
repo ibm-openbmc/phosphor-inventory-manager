@@ -79,8 +79,13 @@ then
         if [ $rc -eq 0 ]; then
             continue;
         fi
-        busctl set-property xyz.openbmc_project.Inventory.Manager \
-            "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action"
+
+        echo "$line" | grep "/xyz/openbmc_project/inventory" >/dev/null
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            inventory_path=$(echo "$line" | sed 's|/xyz/openbmc_project/inventory||')
+            busctl call xyz.openbmc_project.Inventory.Manager /xyz/openbmc_project/inventory xyz.openbmc_project.Inventory.Manager Notify a\{oa\{sa\{sv\}\}\} 1 "$inventory_path" 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" 1 "Functional" b "$action";
+        fi
 
         #skip paths which have no fault LED
         echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
@@ -121,10 +126,15 @@ else
         if [ $rc -eq 0 ]; then
             continue;
         fi
-        busctl set-property xyz.openbmc_project.Inventory.Manager \
-            "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional b "$action"
 
-        # Skip paths which have no fault LED
+        echo "$line" | grep "/xyz/openbmc_project/inventory" >/dev/null
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            inventory_path=$(echo "$line" | sed 's|/xyz/openbmc_project/inventory||')
+            busctl call xyz.openbmc_project.Inventory.Manager /xyz/openbmc_project/inventory xyz.openbmc_project.Inventory.Manager Notify a\{oa\{sa\{sv\}\}\} 1 "$inventory_path" 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" 1 "Functional" b "$action";
+        fi
+
+        #s Skip paths which have no fault LED
         echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
