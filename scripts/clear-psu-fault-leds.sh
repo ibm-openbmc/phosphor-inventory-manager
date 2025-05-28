@@ -19,6 +19,13 @@ busctl set-property xyz.openbmc_project.LED.GroupManager "/xyz/openbmc_project/l
 # Get powersupply objects
 busctl call xyz.openbmc_project.ObjectMapper /xyz/openbmc_project/object_mapper xyz.openbmc_project.ObjectMapper GetSubTreePaths sias "/xyz/openbmc_project/inventory" 0 1 "xyz.openbmc_project.Inventory.Item.PowerSupply" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
 do
+    #object paths for external chassis is hosted by PLDM service not by inventory manager. Hence we need to skip those paths.
+    echo "$line" | grep -E "chassis[0-9]+" >/dev/null
+    rc=$?
+    if [ $rc -eq 0 ]; then
+        continue;
+    fi
+
     # Clear fault LEDs for all power supply objects by setting its Functional to true.
     echo "$line" | grep "/xyz/openbmc_project/inventory" >/dev/null
     rc=$?
