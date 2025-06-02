@@ -75,7 +75,7 @@ then
 
         #object paths for core implemets interface for operational status but is hosted by PLDM service
         # not by inventory manager. Hence we need to skip call to those paths.
-        echo "$line" | grep "core\|powersupply\|unit\|connector\|chasis1" >/dev/null
+        echo "$line" | grep "core\|powersupply\|unit\|connector\|chassis[0-9]" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
             continue;
@@ -122,7 +122,7 @@ else
 
         #object paths for core implemets interface for operational status but is hosted by PLDM service
         # not by inventory manager. Hence we need to skip call to those paths.
-        echo "$line" | grep "core\|powersupply\|unit\|connector\|chassis1" >/dev/null
+        echo "$line" | grep "core\|powersupply\|unit\|connector\|chassis[0-9]" >/dev/null
         rc=$?
         if [ $rc -eq 0 ]; then
             continue;
