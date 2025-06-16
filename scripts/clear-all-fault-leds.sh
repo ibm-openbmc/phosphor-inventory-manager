@@ -33,6 +33,38 @@ current_chassis_status=$(busctl get-property xyz.openbmc_project.State.Chassis /
 
 if [ "${current_chassis_status}" = "\"xyz.openbmc_project.State.Chassis.PowerState.On\"" ]; then
     echo "Current chassis power state is , $current_chassis_status . Exit clear-all-fault-leds.sh script successfully without doing any fault LED reset."
+    # clearing cxp_ports explicitly to resolve issue where PCIe cards where excluded from list of clearing FRU. Because of which cxp_port once lit up will always remain as it is.
+    busctl call xyz.openbmc_project.ObjectMapper /xyz/openbmc_project/object_mapper xyz.openbmc_project.ObjectMapper \
+        GetSubTreePaths sias "/xyz/openbmc_project/inventory/system/chassis/" 0 1 "xyz.openbmc_project.Inventory.Connector.Port" \
+        | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line
+    do
+        #skip All empty lines
+        if [ -z "$line" ];then
+            continue;
+        fi
+
+        if echo "$line" | grep -q "cxp_bot\|cxp_top"; then
+            functional_status=$(busctl get-property xyz.openbmc_project.Inventory.Manager "$line" xyz.openbmc_project.State.Decorator.OperationalStatus Functional | cut -d " " -f 2)
+            if [ "$functional_status" = true ]; then
+                # Get the Fault LED associations
+                busctl call xyz.openbmc_project.ObjectMapper "$line/fault_identifying" \
+                    org.freedesktop.DBus.Properties Get ss "xyz.openbmc_project.Association" \
+                    "endpoints" | sed  's/ /\n/g' | tail -n+3 | awk -F "\"" '{print $2}' | while read -r line2
+                do
+                    # Skip All empty lines
+                    if [ -z "$line2" ];then
+                        continue;
+                    fi
+
+                    # Set the Asserted State property
+                    busctl set-property xyz.openbmc_project.LED.GroupManager \
+                        "$line2" xyz.openbmc_project.Led.Group Asserted b false
+                done
+            fi
+        fi
+    done
+    #Clearing cxp_port ends here. Don't move this code to any other branch/release.
+
     exit 0
 fi
 
@@ -87,11 +119,13 @@ then
             busctl call xyz.openbmc_project.Inventory.Manager /xyz/openbmc_project/inventory xyz.openbmc_project.Inventory.Manager Notify a\{oa\{sa\{sv\}\}\} 1 "$inventory_path" 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" 1 "Functional" b "$action";
         fi
 
-        #skip paths which have no fault LED
-        echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
-        rc=$?
-        if [ $rc -eq 0 ]; then
-            continue;
+        if ! echo "$line" | grep -q "cxp_bot\|cxp_top"; then
+            #skip paths which have no fault LED
+            echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
+            rc=$?
+            if [ $rc -eq 0 ]; then
+                continue;
+            fi
         fi
 
         # Get the Fault LED associations
@@ -134,11 +168,13 @@ else
             busctl call xyz.openbmc_project.Inventory.Manager /xyz/openbmc_project/inventory xyz.openbmc_project.Inventory.Manager Notify a\{oa\{sa\{sv\}\}\} 1 "$inventory_path" 1 "xyz.openbmc_project.State.Decorator.OperationalStatus" 1 "Functional" b "$action";
         fi
 
-        #s Skip paths which have no fault LED
-        echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
-        rc=$?
-        if [ $rc -eq 0 ]; then
-            continue;
+        if ! echo "$line" | grep -q "cxp_bot\|cxp_top"; then
+            # Skip paths which have no fault LED
+            echo "$line" | grep "pcie_card\|usb\|drive\|ethernet\|fan0_\|fan1_\|fan2_\|fan3_\|fan4_\|fan5_\|rdx\|cables\|displayport\|pcieslot12" >/dev/null
+            rc=$?
+            if [ $rc -eq 0 ]; then
+                continue;
+            fi
         fi
 
         # Get the Fault LED associations
