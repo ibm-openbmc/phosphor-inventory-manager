@@ -136,6 +136,14 @@ executable(
     install_dir: get_option('bindir'),
 )
 
+executable(
+    'clear-external-chassis',
+    'clear_external_chassis.cpp',
+    implicit_include_directories: true,
+    install: true,
+    install_dir: get_option('bindir'),
+)
+
 install_data(['scripts/clear-all-fault-leds.sh', 'scripts/clear-psu-fault-leds.sh'],
     install_mode: 'rwxr-xr-x',
     install_dir: get_option('bindir')
