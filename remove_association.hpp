@@ -62,6 +62,14 @@ void removeCriticalAssociation(sdbusplus::bus::bus& bus,
                                const std::string& objectPath,
                                const std::string& service);
 
+/** @brief get Dbus service
+ *
+ * @param[in] path - The D-Bus object path
+ * @param[in] interface - The DBus interface.
+ */
+const std::string getService(const std::string& path,
+                             const std::string& interface);
+
 } // namespace manager
 } // namespace inventory
 } // namespace phosphor
